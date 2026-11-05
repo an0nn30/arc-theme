@@ -1,0 +1,9 @@
+$variant: '@variant@';
+$contrast: 'normal';
+$transparency: '@transparency@';
+
+@import "@sass_path@/gnome-shell-sass/_colors";
+@import "@sass_path@/gnome-shell-sass/_drawing";
+@import "@sass_path@/gnome-shell-sass/_common";
+@import "@sass_path@/gnome-shell-sass/_widgets";
+@import "@sass_path@/_arc-widgets";

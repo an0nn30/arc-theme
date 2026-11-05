@@ -4,9 +4,9 @@
 
 To get the source, either clone the git repository with e.g.
 
-    git clone https://github.com/jnsh/arc-theme --depth 1
+    git clone https://github.com/an0nn30/arc-theme --depth 1
 
-Or download and extract a [snapshot](https://github.com/jnsh/arc-theme/archive/master.zip) of the master git branch, or the latest [release tarball](https://github.com/jnsh/arc-theme/releases/latest).
+You can also download a [source snapshot](https://github.com/an0nn30/arc-theme/archive/refs/heads/master.zip). For GNOME 49 and the optional libadwaita stylesheet, follow the [GNOME 49 installation instructions](README.md#install-on-gnome-49).
 
 ## Dependencies
 
@@ -22,7 +22,7 @@ The following packages are only required for building certain themes:
 You can avoid these dependencies by choosing to not build specific themes using the `themes` build option.
 
 The following packages are only required for building certain themes from a git snapshot:
-* `inkscape` for GTK 2, GTK 3, GTK 4 and Xfwm
+* `inkscape` for GTK 2, GTK 3 and Xfwm. The GTK 4 assets are included.
 
 These packages aren't required when building from a release tarball.
 

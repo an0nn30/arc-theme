@@ -15,7 +15,7 @@ sass_depend_files = run_command(
   sass_path,
   '-name', '_*.scss',
   check : true
-).stdout().split()
+).stdout().strip().split('\n')
 
 # always compile the dark CSS
 input_scss_dark = configure_file(
@@ -38,6 +38,12 @@ gtk4_stylesheets += custom_target(
   command : [sassc, sassc_options, '@INPUT@', '@OUTPUT@'],
   build_by_default : true,
   depend_files : sass_depend_files
+)
+
+gtk4_dark_css = configure_file(
+  capture : true,
+  command : ['echo', '@import url("resource:///org/gnome/arc-theme/' + output_css_dark + '");'],
+  output : 'gtk-dark.css'
 )
 
 foreach variant : get_option('variants')
@@ -127,7 +133,7 @@ foreach variant : get_option('variants')
   gtk4_css = configure_file(
     capture : true,
     command : ['echo', '@import url("resource:///org/gnome/arc-theme/' + output_css + '");'],
-    output : 'gtk-' + variant + '.css'
+    output : 'gtk-default-' + variant + '.css'
   )
 
   install_data(
@@ -136,12 +142,8 @@ foreach variant : get_option('variants')
     rename : ['gtk.css']
   )
 
-  #FIXME gtk-dark.css gets overwritten for subsequent variants, resulting in build warnings
-  gtk4_dark_css = configure_file(
-    capture : true,
-    command : ['echo', '@import url("resource:///org/gnome/arc-theme/' + output_css_dark + '");'],
-    output : 'gtk-dark.css',
-    install : true,
+  install_data(
+    gtk4_dark_css,
     install_dir : prefix / install_dir.get(variant) / common_dirs.get('gtk4')
   )
 endforeach

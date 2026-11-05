@@ -1,5 +1,5 @@
 # supported versions
-gnome_shell_versions = ['3.28', '3.30', '3.32', '3.34', '3.36', '3.38', '40', '41', '42', '43']
+gnome_shell_versions = ['3.28', '3.30', '3.32', '3.34', '3.36', '3.38', '40', '41', '42', '43', '49']
 
 # gnome-shell version
 gnome_shell = find_program('gnome-shell', required : false)
@@ -25,7 +25,10 @@ else
 endif
 
 if gnome_shell_ver not in gnome_shell_versions
-  if gnome_shell_ver.version_compare('>' + gnome_shell_versions[-1])
+  if gnome_shell_ver.version_compare('>43') and gnome_shell_ver.version_compare('<49')
+    warning('GNOME Shell version ' + gnome_shell_ver + ' not supported yet, building theme for 43')
+    gnome_shell_ver = '43'
+  elif gnome_shell_ver.version_compare('>' + gnome_shell_versions[-1])
     warning('GNOME Shell version ' + gnome_shell_ver + ' not supported yet, building theme for ' + gnome_shell_versions[-1])
     gnome_shell_ver = gnome_shell_versions[-1]
   else
@@ -40,7 +43,11 @@ sass_depend_files = run_command(
   meson.current_source_dir() / gnome_shell_ver / 'sass',
   '-name', '_*.scss',
   check : true
-).stdout().split()
+).stdout().strip().split('\n')
+
+if gnome_shell_ver == '49'
+  sass_depend_files += files('43/sass/_colors.scss')
+endif
 
 # compile and install
 
@@ -82,26 +89,36 @@ foreach variant : get_option('variants')
 
   if get_option('gnome_shell_gresource')
 
-    # asset dependencies for gresource
-    gresource_depend_files = []
-    gresource_depend_files += [meson.current_source_dir() / gnome_shell_ver / 'pad-osd.css']
-    gresource_depend_files += run_command(
-      'find', '-L',
-      meson.current_source_dir() / gnome_shell_ver / 'icons',
-      meson.current_source_dir() / gnome_shell_ver / 'common-assets',
-      meson.current_source_dir() / gnome_shell_ver / variant + '-assets',
-      check : true
-    ).stdout().split()
-
     gresource_name = (variant == 'light' ? 'gnome-shell-theme' : 'gnome-shell-theme-' + variant)
+    gresource_dir = meson.current_source_dir() / gnome_shell_ver
+    if gnome_shell_ver == '49'
+      gresource_dir = gresource_dir / 'resources'
+      gresource_xml = configure_file(
+        input : '49/resources/theme.gresource.xml.in',
+        output : gresource_name + '.gresource.xml',
+        configuration : {'stylesheet' : output_css}
+      )
+      gresource_depend_files = files(
+        '49/resources/calendar-today.svg', '49/resources/calendar-today-light.svg',
+        '49/resources/gnome-shell-high-contrast.css', '49/resources/gnome-shell-start.svg',
+        '49/resources/pad-osd.css', '49/resources/workspace-placeholder.svg'
+      )
+    else
+      gresource_xml = gresource_dir / 'gresource' / gresource_name + '.gresource.xml'
+      gresource_depend_files = [gresource_dir / 'pad-osd.css']
+      gresource_depend_files += run_command(
+        'find', '-L', gresource_dir / 'icons', gresource_dir / 'common-assets',
+        gresource_dir / variant + '-assets', '-type', 'f', check : true
+      ).stdout().strip().split('\n')
+    endif
 
     gnome_shell_gresource = custom_target(
     gresource_name + '-gresource',
-    input : meson.current_source_dir() / gnome_shell_ver / 'gresource' / gresource_name + '.gresource.xml',
+    input : gresource_xml,
     output : gresource_name + '.gresource',
     command : [
       glib_compile_resources,
-      '--sourcedir=' + meson.current_source_dir() / gnome_shell_ver,
+      '--sourcedir=' + gresource_dir,
       '--sourcedir=' + meson.current_build_dir(),
       '--target=@OUTPUT@',
       '@INPUT@'
@@ -119,6 +136,11 @@ foreach variant : get_option('variants')
     gnome_shell_css.full_path(),
     '$MESON_INSTALL_DESTDIR_PREFIX' / install_dir.get(variant) / common_dirs.get('gnome-shell') / 'gnome-shell.css'
   )
+
+  # GNOME 49 loads its images from the Shell resource at runtime.
+  if gnome_shell_ver == '49'
+    continue
+  endif
 
   install_subdir(
     gnome_shell_ver / 'common-assets',
